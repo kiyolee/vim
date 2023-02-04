@@ -871,6 +871,10 @@ CUI_OBJ = $(OUTDIR)\iscygpty.obj
 !ENDIF
 SUBSYSTEM_TOOLS = console
 
+!if "$(CL)" == "/D_USING_V110_SDK71_"
+RCFLAGS = $(RCFLAGS) /D_USING_V110_SDK71_
+!endif
+
 XDIFF_OBJ = $(OBJDIR)/xdiffi.obj \
 	$(OBJDIR)/xemit.obj \
 	$(OBJDIR)/xprepare.obj \

@@ -1743,6 +1743,10 @@ is_reparse_point_included(LPCWSTR fname)
     return FALSE;
 }
 
+#if _WINNT_WIN32 < 0x0600
+#define GetFinalPathNameByHandleW(a, b, c, d) (0)
+#endif
+
 /*
  * Return the resolved file path, NULL if "fname" is an AppExecLink reparse
  * point, already fully resolved, or it doesn't exists.
