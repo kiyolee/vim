@@ -42,6 +42,10 @@
 # include <tlhelp32.h>
 #endif
 
+#if (!defined(FEAT_GUI_MSWIN) || defined(VIMDLL)) && !defined(MOUSE_HWHEELED)
+# define MOUSE_HWHEELED 0x0008
+#endif
+
 // Record all output and all keyboard & mouse input
 // #define MCH_WRITE_DUMP
 
@@ -147,6 +151,53 @@ static int default_console_color_fg = 0xc0c0c0; // white
 static void set_console_color_rgb(void);
 static void reset_console_color_rgb(void);
 static void restore_console_color_rgb(void);
+
+#if _WIN32_WINNT < 0x0600
+
+static BOOL xp_GetConsoleScreenBufferInfoEx(HANDLE hConOut, PCONSOLE_SCREEN_BUFFER_INFOEX pcsbiex)
+{
+    if (!pcsbiex || pcsbiex->cbSize != sizeof(CONSOLE_SCREEN_BUFFER_INFOEX))
+        return FALSE;
+    CONSOLE_SCREEN_BUFFER_INFO csbi;
+    if (!GetConsoleScreenBufferInfo(hConOut, &csbi))
+        return FALSE;
+    pcsbiex->dwSize = csbi.dwSize;
+    pcsbiex->dwCursorPosition = csbi.dwCursorPosition;
+    pcsbiex->wAttributes = csbi.wAttributes;
+    pcsbiex->srWindow = csbi.srWindow;
+    pcsbiex->dwMaximumWindowSize = csbi.dwMaximumWindowSize;
+    pcsbiex->wPopupAttributes = 0; // Not used.
+    pcsbiex->bFullscreenSupported = FALSE; // Not used.
+    // Simply use default color set.
+    pcsbiex->ColorTable[0] = 0x00000000;
+    pcsbiex->ColorTable[1] = 0x00800000;
+    pcsbiex->ColorTable[2] = 0x00008000;
+    pcsbiex->ColorTable[3] = 0x00808000;
+    pcsbiex->ColorTable[4] = 0x00000080;
+    pcsbiex->ColorTable[5] = 0x00800080;
+    pcsbiex->ColorTable[6] = 0x00008080;
+    pcsbiex->ColorTable[7] = 0x00c0c0c0;
+    pcsbiex->ColorTable[8] = 0x00808080;
+    pcsbiex->ColorTable[9] = 0x00ff0000;
+    pcsbiex->ColorTable[10] = 0x0000ff00;
+    pcsbiex->ColorTable[11] = 0x00ffff00;
+    pcsbiex->ColorTable[12] = 0x000000ff;
+    pcsbiex->ColorTable[13] = 0x00ff00ff;
+    pcsbiex->ColorTable[14] = 0x0000ffff;
+    pcsbiex->ColorTable[15] = 0x00ffffff;
+    return TRUE;
+}
+
+static BOOL xp_SetConsoleScreenBufferInfoEx(HANDLE hConOut, PCONSOLE_SCREEN_BUFFER_INFOEX pcsbiex)
+{
+    return TRUE;
+}
+
+#define GetConsoleScreenBufferInfoEx xp_GetConsoleScreenBufferInfoEx
+#define SetConsoleScreenBufferInfoEx xp_SetConsoleScreenBufferInfoEx
+
+#endif
+
 #endif  // !FEAT_GUI_MSWIN || VIMDLL
 
 // This flag is newly created from Windows 10
