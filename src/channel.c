@@ -178,6 +178,67 @@ strerror_win32(int eno)
 }
 #endif
 
+#if defined(MSWIN) && _WIN32_WINNT < 0x0600 && defined(HAVE_INET_NTOP)
+
+#ifndef STATUS_NOT_IMPLEMENTED
+#define STATUS_NOT_IMPLEMENTED   0xC0000002L
+#endif
+
+typedef LONG NTAPI FN_RtlIpv4AddressToStringEx(
+    const IN_ADDR *Address, USHORT Port,
+    LPTSTR AddressString, PULONG AddressStringLength);
+typedef FN_RtlIpv4AddressToStringEx* PFN_RtlIpv4AddressToStringEx;
+#define EP_RtlIpv4AddressToStringEx "RtlIpv4AddressToStringExA"
+
+typedef LONG NTAPI FN_RtlIpv6AddressToStringEx(
+    const IN6_ADDR *Address, ULONG ScopeId, USHORT Port,
+    LPTSTR AddressString, PULONG AddressStringLength);
+typedef FN_RtlIpv6AddressToStringEx* PFN_RtlIpv6AddressToStringEx;
+#define EP_RtlIpv6AddressToStringEx "RtlIpv6AddressToStringExA"
+
+static const char* xp_inet_ntop(int af, const void* src, char* dst, socklen_t cnt)
+{
+    static int api_inited = 0;
+    static PFN_RtlIpv4AddressToStringEx pfn_RtlIpv4AddressToStringEx = NULL;
+    static PFN_RtlIpv6AddressToStringEx pfn_RtlIpv6AddressToStringEx = NULL;
+    ULONG dcnt = cnt;
+    LONG rc = STATUS_NOT_IMPLEMENTED;
+    if (api_inited == 0)
+    {
+        HMODULE hNtDll = GetModuleHandle("ntdll.dll");
+        if (hNtDll)
+        {
+            pfn_RtlIpv4AddressToStringEx = (PFN_RtlIpv4AddressToStringEx)GetProcAddress(hNtDll, EP_RtlIpv4AddressToStringEx);
+            pfn_RtlIpv6AddressToStringEx = (PFN_RtlIpv6AddressToStringEx)GetProcAddress(hNtDll, EP_RtlIpv6AddressToStringEx);
+            api_inited = 1;
+        }
+        else
+        {
+            api_inited = -1;
+        }
+    }
+    switch (af)
+    {
+    case AF_INET:
+        if (pfn_RtlIpv4AddressToStringEx)
+            rc = pfn_RtlIpv4AddressToStringEx((struct in_addr const*)src, 0, dst, &dcnt);
+        break;
+    case AF_INET6:
+        if (pfn_RtlIpv6AddressToStringEx)
+            rc = pfn_RtlIpv6AddressToStringEx((struct in6_addr const*)src, 0, 0, dst, &dcnt);
+        break;
+    }
+    if (rc != NO_ERROR)
+    {
+        return NULL;
+    }
+    return dst;
+}
+
+#define inet_ntop xp_inet_ntop
+
+#endif
+
 /*
  * The list of all allocated channels.
  */
