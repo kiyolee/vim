@@ -625,6 +625,11 @@ begin_coloring_char (char *l, int *c, int e, int ebcdic)
   l[(*c)++] = 'm';
 }
 
+// This flag is newly created from Windows 10
+#if defined(WIN32) && !defined(ENABLE_VIRTUAL_TERMINAL_PROCESSING)
+# define ENABLE_VIRTUAL_TERMINAL_PROCESSING 0x0004
+#endif
+
   static int
 enable_color(void)
 {
