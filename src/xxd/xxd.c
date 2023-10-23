@@ -706,6 +706,11 @@ get_color_char (int e, int ebcdic)
     return 0;
 }
 
+// This flag is newly created from Windows 10
+#if defined(WIN32) && !defined(ENABLE_VIRTUAL_TERMINAL_PROCESSING)
+# define ENABLE_VIRTUAL_TERMINAL_PROCESSING 0x0004
+#endif
+
   static int
 enable_color(void)
 {
