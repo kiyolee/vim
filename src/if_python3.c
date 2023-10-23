@@ -32,6 +32,30 @@
 #include "vim.h"
 
 #include <limits.h>
+#include <assert.h>
+
+#if defined(MSWIN) && (_WIN32_WINNT < _WIN32_WINNT_WIN7)
+#define LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR    0x00000100
+#define LOAD_LIBRARY_SEARCH_SYSTEM32        0x00000800
+#endif
+#if defined(MSWIN) && (_WIN32_WINNT < _WIN32_WINNT_WIN6)
+static LSTATUS _my_RegGetValueW(HKEY hkey, LPCWSTR lpSubKey, LPCWSTR lpValue, DWORD dwFlags,
+                                LPDWORD pdwType, PVOID pvData, LPDWORD pcbData)
+{
+    assert(dwFlags == RRF_RT_REG_SZ);
+    HKEY hSubKey;
+    int rc = RegOpenKeyExW(hkey, lpSubKey, 0, KEY_READ, &hSubKey);
+    if (rc != ERROR_SUCCESS) return rc;
+    DWORD dwType = 0;
+    if (!pdwType) pdwType = &dwType;
+    rc = RegQueryValueExW(hSubKey, lpValue, 0, pdwType, pvData, pcbData);
+    RegCloseKey(hSubKey);
+    if (rc == ERROR_SUCCESS && !!(dwFlags & RRF_RT_REG_SZ) && *pdwType != REG_SZ)
+        return ERROR_FILE_NOT_FOUND;
+    return rc;
+}
+#define RegGetValueW _my_RegGetValueW
+#endif
 
 #if defined(MSWIN) && defined(HAVE_FCNTL_H)
 # undef HAVE_FCNTL_H
@@ -859,7 +883,7 @@ py3_get_system_libname(const char *libname)
 	    if (*wp != L'\0')
 		continue;
 #  else
-	    if (wcscmp(wp, L"-32") != 0)
+	    if (*wp != L'\0' && wcscmp(wp, L"-32") != 0)
 		continue;
 #  endif
 
