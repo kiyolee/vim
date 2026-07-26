@@ -4769,7 +4769,9 @@ query_terminal_pixel_size_w32(int *win_w, int *win_h)
 	// Read raw bytes; deliver xterm response as VT input.
 	mode_new &= ~(ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT
 						    | ENABLE_PROCESSED_INPUT);
+#ifdef ENABLE_VIRTUAL_TERMINAL_INPUT
 	mode_new |= ENABLE_VIRTUAL_TERMINAL_INPUT;
+#endif
 	if (SetConsoleMode(hIn, mode_new))
 	    restored = 1;
     }
@@ -4966,7 +4968,9 @@ mch_kitty_probe(void)
 	// Read raw bytes; deliver the terminal responses as VT input.
 	mode_new &= ~(ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT
 						| ENABLE_PROCESSED_INPUT);
+#ifdef ENABLE_VIRTUAL_TERMINAL_INPUT
 	mode_new |= ENABLE_VIRTUAL_TERMINAL_INPUT;
+#endif
 	if (SetConsoleMode(hIn, mode_new))
 	    restored = 1;
     }
