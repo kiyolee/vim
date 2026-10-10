@@ -64,6 +64,11 @@
 
 #include "iscygpty.h"
 
+#if _WIN32_WINNT < 0x0600
+// Definitely use stub before Vista.
+# define STUB_IMPL
+#endif
+
 //#define USE_DYNFILEID
 #ifdef USE_DYNFILEID
 typedef BOOL (WINAPI *pfnGetFileInformationByHandleEx)(
