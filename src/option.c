@@ -504,6 +504,9 @@ set_init_expand_env(void)
     static char_u *
 get_ui_langs(void)
 {
+#if _WIN32_WINNT < 0x0600
+    return NULL;
+#else
     ULONG	num_languages = 0;
     ULONG	bufsize = 0;
     WCHAR	*buffer;
@@ -549,6 +552,7 @@ get_ui_langs(void)
     vim_free(buffer);
 
     return langs;
+#endif
 }
 #endif
 
